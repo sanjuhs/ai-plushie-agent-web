@@ -128,6 +128,11 @@ export default function PlushiePage() {
   const [lastShakeTime, setLastShakeTime] = useState(0);
   const shakeThreshold = 15; // Acceleration threshold for shake detection
 
+  // MCP integration states
+  const [mcpTools, setMcpTools] = useState<any[]>([]);
+  const [mcpResult, setMcpResult] = useState<string | null>(null);
+  const [mcpLoading, setMcpLoading] = useState(false);
+
   // Plushie-specific bot configuration
   const [botConfig] = useState<BotConfig>({
     voice: "shimmer",
@@ -547,6 +552,60 @@ You love playing games, hearing about adventures, and helping kids feel brave an
     console.log("😴 Squeaky is now sleeping");
   };
 
+  // MCP functions
+  const loadMCPTools = async () => {
+    try {
+      setMcpLoading(true);
+      const response = await fetch("/api/mcp");
+      const data = await response.json();
+
+      if (data.success) {
+        setMcpTools(data.tools);
+        console.log(
+          "🔧 [MCP] Loaded tools:",
+          data.tools.map((t: any) => t.name)
+        );
+      } else {
+        console.error("❌ [MCP] Failed to load tools:", data.error);
+      }
+    } catch (error) {
+      console.error("❌ [MCP] Error loading tools:", error);
+    } finally {
+      setMcpLoading(false);
+    }
+  };
+
+  const callMCPTool = async (toolName: string, args: any = {}) => {
+    try {
+      setMcpLoading(true);
+      console.log(`🔧 [MCP] Calling tool: ${toolName}`, args);
+
+      const response = await fetch("/api/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tool: toolName, args }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const resultText =
+          data.result.content?.[0]?.text || "Tool executed successfully";
+        setMcpResult(resultText);
+        console.log("✅ [MCP] Tool result:", resultText);
+        return resultText;
+      } else {
+        console.error("❌ [MCP] Tool call failed:", data.error);
+        setMcpResult(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("❌ [MCP] Error calling tool:", error);
+      setMcpResult(`Error: ${error}`);
+    } finally {
+      setMcpLoading(false);
+    }
+  };
+
   // Toggle listening mode functions
   const enableListeningMode = () => {
     console.log("👂 Enabling listening mode - Squeaky will only listen");
@@ -599,6 +658,9 @@ You love playing games, hearing about adventures, and helping kids feel brave an
         setupMotionListeners();
       }
     }
+
+    // Load MCP tools on component mount
+    loadMCPTools();
 
     return () => {
       handleDisconnect();
@@ -787,6 +849,124 @@ You love playing games, hearing about adventures, and helping kids feel brave an
             </button>
           </div>
         )}
+
+        {/* MCP Tools Section */}
+        <div className="mt-6">
+          <div className="bg-white rounded-xl p-4 shadow-lg">
+            <h3 className="text-lg font-bold text-purple-800 mb-3 text-center">
+              🔧 Squeaky's Special Powers (MCP Tools)
+            </h3>
+
+            {mcpResult && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="text-sm text-green-800 font-medium mb-1">
+                  Latest Result:
+                </div>
+                <div className="text-sm text-green-700 whitespace-pre-wrap">
+                  {mcpResult}
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => callMCPTool("hello_world", { name: "Friend" })}
+                disabled={mcpLoading}
+                className="py-2 px-3 bg-pink-400 hover:bg-pink-500 text-pink-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
+              >
+                👋 Say Hello
+              </button>
+
+              <button
+                onClick={() => callMCPTool("get_time")}
+                disabled={mcpLoading}
+                className="py-2 px-3 bg-blue-400 hover:bg-blue-500 text-blue-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
+              >
+                🕐 Get Time
+              </button>
+
+              <button
+                onClick={() => callMCPTool("plushie_mood", { action: "get" })}
+                disabled={mcpLoading}
+                className="py-2 px-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
+              >
+                😊 Check Mood
+              </button>
+
+              <button
+                onClick={() =>
+                  callMCPTool("plushie_mood", {
+                    action: "set",
+                    mood: "excited",
+                  })
+                }
+                disabled={mcpLoading}
+                className="py-2 px-3 bg-orange-400 hover:bg-orange-500 text-orange-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
+              >
+                🤩 Set Excited
+              </button>
+
+              <button
+                onClick={() =>
+                  callMCPTool("plushie_story", {
+                    theme: "adventure",
+                    length: "short",
+                  })
+                }
+                disabled={mcpLoading}
+                className="py-2 px-3 bg-green-400 hover:bg-green-500 text-green-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
+              >
+                📖 Adventure Story
+              </button>
+
+              <button
+                onClick={() =>
+                  callMCPTool("plushie_story", {
+                    theme: "mystery",
+                    length: "short",
+                  })
+                }
+                disabled={mcpLoading}
+                className="py-2 px-3 bg-purple-400 hover:bg-purple-500 text-purple-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
+              >
+                🔍 Mystery Story
+              </button>
+            </div>
+
+            {mcpLoading && (
+              <div className="mt-3 text-center">
+                <div className="inline-flex items-center text-purple-700 text-sm">
+                  <svg
+                    className="animate-spin h-4 w-4 mr-2"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Using special powers...
+                </div>
+              </div>
+            )}
+
+            {mcpTools.length > 0 && (
+              <div className="mt-3 text-xs text-gray-600 text-center">
+                MCP Server: {mcpTools.length} tools loaded
+              </div>
+            )}
+          </div>
+        </div>
 
         <div className="text-center mt-8 text-purple-600 text-sm">
           <p>Made with 💖 for kids who love to chat!</p>

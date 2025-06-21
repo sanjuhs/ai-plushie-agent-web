@@ -4,7 +4,8 @@ export default function Home() {
   const pages = [
     {
       title: "🐭 Squeaky the Plushie",
-      description: "Interactive AI companion plushie that talks to children",
+      description:
+        "Interactive AI companion plushie that talks to children with MCP tools",
       href: "/openai-plushie-unicorn",
       status: "Ready",
       color: "from-pink-400 to-purple-400",
@@ -15,6 +16,14 @@ export default function Home() {
       href: "/gemini-test01",
       status: "Ready",
       color: "from-blue-400 to-cyan-400",
+    },
+    {
+      title: "🌡️ MCP Temperature Monitor",
+      description:
+        "Real-time temperature monitoring with MCP server events (simulates Raspberry Pi)",
+      href: "/test-mcp",
+      status: "Ready",
+      color: "from-green-400 to-emerald-400",
     },
   ];
 
@@ -34,7 +43,7 @@ export default function Home() {
         </div>
 
         {/* Navigation Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 max-w-6xl mx-auto">
           {pages.map((page, index) => (
             <Link href={page.href} key={index}>
               <div
