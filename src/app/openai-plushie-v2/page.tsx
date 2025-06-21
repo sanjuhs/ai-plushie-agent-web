@@ -7,92 +7,10 @@ import {
   createToolCallResponse,
   type ToolCall,
 } from "@/lib/openai-tools";
-
-// Simple animated plushie face component
-const PlushieFace = ({
-  isSpeaking,
-  isShaking,
-  deviceOrientation,
-}: {
-  isSpeaking: boolean;
-  isShaking: boolean;
-  deviceOrientation: string;
-}) => {
-  const [blinkState, setBlinkState] = useState(false);
-
-  // Blinking animation
-  useEffect(() => {
-    const blinkInterval = setInterval(() => {
-      setBlinkState(true);
-      setTimeout(() => setBlinkState(false), 150);
-    }, 2000 + Math.random() * 3000);
-
-    return () => clearInterval(blinkInterval);
-  }, []);
-
-  return (
-    <div className="relative w-48 h-48 mx-auto mb-6">
-      {/* Main face circle */}
-      <div className="w-full h-full bg-gradient-to-br from-pink-300 to-pink-400 rounded-full shadow-lg relative">
-        {/* Ears */}
-        <div className="absolute -top-6 left-8 w-12 h-16 bg-pink-300 rounded-full transform -rotate-12"></div>
-        <div className="absolute -top-6 right-8 w-12 h-16 bg-pink-300 rounded-full transform rotate-12"></div>
-
-        {/* Eyes */}
-        <div className="absolute top-16 left-12 flex space-x-8">
-          <div
-            className={`w-8 h-8 bg-black rounded-full transition-all duration-150 ${
-              blinkState ? "scale-y-0" : "scale-y-100"
-            }`}
-          >
-            <div className="w-2 h-2 bg-white rounded-full ml-1 mt-1"></div>
-          </div>
-          <div
-            className={`w-8 h-8 bg-black rounded-full transition-all duration-150 ${
-              blinkState ? "scale-y-0" : "scale-y-100"
-            }`}
-          >
-            <div className="w-2 h-2 bg-white rounded-full ml-1 mt-1"></div>
-          </div>
-        </div>
-
-        {/* Mouth */}
-        <div
-          className={`absolute top-28 left-1/2 transform -translate-x-1/2 transition-all duration-200 ${
-            isSpeaking ? "w-8 h-6" : "w-6 h-4"
-          } bg-pink-600 rounded-full`}
-        >
-          {isSpeaking && (
-            <div className="w-4 h-3 bg-pink-700 rounded-full mx-auto mt-1"></div>
-          )}
-        </div>
-
-        {/* Speaking indicator */}
-        {isSpeaking && (
-          <>
-            <div className="absolute inset-0 border-4 border-yellow-300 rounded-full animate-ping opacity-30"></div>
-            <div className="absolute inset-2 border-2 border-yellow-400 rounded-full animate-pulse"></div>
-          </>
-        )}
-
-        {/* Shake indicator */}
-        {isShaking && (
-          <>
-            <div className="absolute inset-0 border-4 border-red-400 rounded-full animate-ping opacity-50"></div>
-            <div className="absolute inset-1 border-2 border-red-500 rounded-full animate-bounce"></div>
-          </>
-        )}
-      </div>
-
-      {/* Device orientation indicator */}
-      {deviceOrientation !== "normal" && (
-        <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-          📱 {deviceOrientation.replace("-", " ")}
-        </div>
-      )}
-    </div>
-  );
-};
+import { PlushieFace } from "./components/PlushieFace";
+import { MotionControls } from "./components/MotionControls";
+import { MCPToolsSection } from "./components/MCPToolsSection";
+import { useMotionDetection } from "./hooks/useMotionDetection";
 
 interface BotConfig {
   voice: string;
@@ -127,12 +45,13 @@ export default function PlushiePage() {
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
   const [, setCurrentMessageId] = useState<string | null>(null);
 
-  // Device motion states
-  const [isShaking, setIsShaking] = useState(false);
-  const [deviceOrientation, setDeviceOrientation] = useState<string>("normal");
-  const [motionPermission, setMotionPermission] = useState<string>("unknown");
-  const [lastShakeTime, setLastShakeTime] = useState(0);
-  const shakeThreshold = 15; // Acceleration threshold for shake detection
+  // Use motion detection hook
+  const {
+    isShaking,
+    deviceOrientation,
+    motionPermission,
+    requestMotionPermission,
+  } = useMotionDetection();
 
   // MCP integration states
   const [mcpTools, setMcpTools] = useState<
@@ -151,7 +70,9 @@ Speak in a cheerful, child-friendly way using simple words. Be encouraging and s
 
 You love playing games, hearing about adventures, and helping kids feel brave and confident. You're not just an AI - you're Squeaky the mouse plushie, a real friend!
 
-You have special abilities! You can check the weather for any location using your weather-sensing powers. When someone asks about weather, use your get_current_weather function to help them!`,
+You have special abilities! You can check the weather for any location using your weather-sensing powers. When someone asks about weather, use your get_current_weather function to help them!
+
+IMPORTANT: When someone shakes you or mentions shaking, react with excitement and joy! Say things like "Wheeee! That was fun!" or "Oh my whiskers, that tickles!" or "I love being shaken - it makes me feel all bouncy!" Always be enthusiastic about being shaken and ask if they want to play more!`,
     model: "gpt-4o-mini-realtime-preview-2024-12-17",
     temperature: 0.8,
     turnDetection: "server_vad",
@@ -162,96 +83,6 @@ You have special abilities! You can check the weather for any location using you
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showInstructions, setShowInstructions] = useState(true);
-
-  // Request device motion permission (iOS 13+)
-  const requestMotionPermission = async () => {
-    // @ts-expect-error - iOS DeviceMotionEvent.requestPermission is not in standard types
-    if (typeof DeviceMotionEvent.requestPermission === "function") {
-      try {
-        // @ts-expect-error - iOS DeviceMotionEvent.requestPermission is not in standard types
-        const permission = await DeviceMotionEvent.requestPermission();
-        setMotionPermission(permission);
-        if (permission === "granted") {
-          setupMotionListeners();
-        }
-      } catch (error) {
-        console.error("Error requesting motion permission:", error);
-        setMotionPermission("denied");
-      }
-    } else {
-      // Non-iOS devices or older iOS versions
-      setMotionPermission("granted");
-      setupMotionListeners();
-    }
-  };
-
-  // Setup motion and orientation listeners
-  const setupMotionListeners = () => {
-    // Shake detection
-    const handleDeviceMotion = (event: DeviceMotionEvent) => {
-      const acceleration = event.accelerationIncludingGravity;
-      if (acceleration) {
-        const totalAcceleration = Math.sqrt(
-          (acceleration.x || 0) ** 2 +
-            (acceleration.y || 0) ** 2 +
-            (acceleration.z || 0) ** 2
-        );
-
-        if (totalAcceleration > shakeThreshold) {
-          const now = Date.now();
-          if (now - lastShakeTime > 1000) {
-            // Debounce shakes
-            setIsShaking(true);
-            setLastShakeTime(now);
-            console.log(
-              "🎲 [MOTION] Shake detected! Acceleration:",
-              totalAcceleration.toFixed(2)
-            );
-
-            // Reset shake state after animation
-            setTimeout(() => setIsShaking(false), 1000);
-          }
-        }
-      }
-    };
-
-    // Orientation detection
-    const handleOrientationChange = (event: DeviceOrientationEvent) => {
-      const { beta, gamma } = event; // beta: front-back tilt, gamma: left-right tilt
-
-      if (beta !== null && gamma !== null) {
-        let orientation = "normal";
-
-        if (Math.abs(beta) > 150 || Math.abs(gamma) > 150) {
-          orientation = "upside-down";
-        } else if (Math.abs(gamma) > 45) {
-          orientation = gamma > 0 ? "tilted-right" : "tilted-left";
-        } else if (beta > 45) {
-          orientation = "face-down";
-        } else if (beta < -45) {
-          orientation = "face-up";
-        }
-
-        if (orientation !== deviceOrientation) {
-          setDeviceOrientation(orientation);
-          console.log(
-            "📱 [ORIENTATION] Device orientation:",
-            orientation,
-            `(β:${beta.toFixed(1)}°, γ:${gamma.toFixed(1)}°)`
-          );
-        }
-      }
-    };
-
-    window.addEventListener("devicemotion", handleDeviceMotion);
-    window.addEventListener("deviceorientation", handleOrientationChange);
-
-    // Cleanup function
-    return () => {
-      window.removeEventListener("devicemotion", handleDeviceMotion);
-      window.removeEventListener("deviceorientation", handleOrientationChange);
-    };
-  };
 
   const handleConnect = async () => {
     try {
@@ -713,17 +544,47 @@ You have special abilities! You can check the weather for any location using you
     }
   };
 
-  useEffect(() => {
-    // Initialize motion detection on component mount
-    if (typeof window !== "undefined") {
-      // For non-iOS devices, automatically enable motion detection
-      // @ts-expect-error - iOS DeviceMotionEvent.requestPermission is not in standard types
-      if (typeof DeviceMotionEvent.requestPermission !== "function") {
-        setMotionPermission("granted");
-        setupMotionListeners();
-      }
-    }
+  // Function to send shake detection message to AI
+  const sendShakeMessage = () => {
+    console.log("🎲 Sending shake message to Squeaky...");
+    if (
+      dataChannelRef.current &&
+      dataChannelRef.current.readyState === "open"
+    ) {
+      // Send a user message about shaking
+      const userMessageEvent = {
+        type: "conversation.item.create",
+        event_id: `shake_message_${Date.now()}`,
+        item: {
+          type: "message",
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: "I'm shaking you! React to being shaken!",
+            },
+          ],
+        },
+      };
 
+      dataChannelRef.current.send(JSON.stringify(userMessageEvent));
+      console.log("📤 Shake message sent to Squeaky");
+
+      // Trigger a response
+      setTimeout(() => {
+        const responseEvent = {
+          type: "response.create",
+          event_id: `shake_response_${Date.now()}`,
+        };
+        dataChannelRef.current?.send(JSON.stringify(responseEvent));
+        console.log("📤 Shake response trigger sent to Squeaky");
+      }, 100); // Small delay to ensure message is processed first
+    } else {
+      console.log("❌ Cannot send shake message - Squeaky is not connected");
+    }
+  };
+
+  useEffect(() => {
     // Load MCP tools on component mount
     loadMCPTools();
 
@@ -731,6 +592,14 @@ You have special abilities! You can check the weather for any location using you
       handleDisconnect();
     };
   }, []);
+
+  // Watch for shake detection and send message to AI
+  useEffect(() => {
+    if (isShaking && isConnected) {
+      console.log("🎲 [SHAKE DETECTED] Telling Squeaky about the shake!");
+      sendShakeMessage();
+    }
+  }, [isShaking, isConnected]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-200 via-pink-200 to-yellow-200 text-gray-800 p-4">
@@ -808,36 +677,12 @@ You have special abilities! You can check the weather for any location using you
           </div>
         )}
 
-        {/* Motion Permission Button (iOS only) */}
-        {motionPermission === "unknown" && (
-          <div className="text-center mb-4">
-            <button
-              onClick={requestMotionPermission}
-              className="w-full py-3 px-4 bg-blue-400 hover:bg-blue-500 text-white rounded-xl font-medium text-sm active:scale-95 transition-all"
-            >
-              📱 Enable Motion Detection
-            </button>
-          </div>
-        )}
-
-        {/* Motion Status Display */}
-        {motionPermission === "granted" && (
-          <div className="bg-green-50 rounded-xl p-3 mb-4 text-center">
-            <div className="text-sm text-green-800">
-              📱 Motion Detection: <span className="font-medium">Active</span>
-            </div>
-            {isShaking && (
-              <div className="text-xs text-red-600 font-medium mt-1">
-                🎲 Shaking detected!
-              </div>
-            )}
-            {deviceOrientation !== "normal" && (
-              <div className="text-xs text-blue-600 font-medium mt-1">
-                📱 {deviceOrientation.replace("-", " ")}
-              </div>
-            )}
-          </div>
-        )}
+        <MotionControls
+          motionPermission={motionPermission}
+          isShaking={isShaking}
+          deviceOrientation={deviceOrientation}
+          onRequestPermission={requestMotionPermission}
+        />
 
         <div className="text-center mb-6">
           <button
@@ -933,123 +778,12 @@ You have special abilities! You can check the weather for any location using you
           </div>
         )}
 
-        {/* MCP Tools Section */}
-        <div className="mt-6">
-          <div className="bg-white rounded-xl p-4 shadow-lg">
-            <h3 className="text-lg font-bold text-purple-800 mb-3 text-center">
-              🔧 Squeaky&apos;s Special Powers (MCP Tools)
-            </h3>
-
-            {mcpResult && (
-              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                <div className="text-sm text-green-800 font-medium mb-1">
-                  Latest Result:
-                </div>
-                <div className="text-sm text-green-700 whitespace-pre-wrap">
-                  {mcpResult}
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => callMCPTool("hello_world", { name: "Friend" })}
-                disabled={mcpLoading}
-                className="py-2 px-3 bg-pink-400 hover:bg-pink-500 text-pink-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
-              >
-                👋 Say Hello
-              </button>
-
-              <button
-                onClick={() => callMCPTool("get_time")}
-                disabled={mcpLoading}
-                className="py-2 px-3 bg-blue-400 hover:bg-blue-500 text-blue-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
-              >
-                🕐 Get Time
-              </button>
-
-              <button
-                onClick={() => callMCPTool("plushie_mood", { action: "get" })}
-                disabled={mcpLoading}
-                className="py-2 px-3 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
-              >
-                😊 Check Mood
-              </button>
-
-              <button
-                onClick={() =>
-                  callMCPTool("plushie_mood", {
-                    action: "set",
-                    mood: "excited",
-                  })
-                }
-                disabled={mcpLoading}
-                className="py-2 px-3 bg-orange-400 hover:bg-orange-500 text-orange-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
-              >
-                🤩 Set Excited
-              </button>
-
-              <button
-                onClick={() =>
-                  callMCPTool("plushie_story", {
-                    theme: "adventure",
-                    length: "short",
-                  })
-                }
-                disabled={mcpLoading}
-                className="py-2 px-3 bg-green-400 hover:bg-green-500 text-green-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
-              >
-                📖 Adventure Story
-              </button>
-
-              <button
-                onClick={() =>
-                  callMCPTool("plushie_story", {
-                    theme: "mystery",
-                    length: "short",
-                  })
-                }
-                disabled={mcpLoading}
-                className="py-2 px-3 bg-purple-400 hover:bg-purple-500 text-purple-900 rounded-lg font-medium text-xs active:scale-95 transition-all disabled:opacity-50"
-              >
-                🔍 Mystery Story
-              </button>
-            </div>
-
-            {mcpLoading && (
-              <div className="mt-3 text-center">
-                <div className="inline-flex items-center text-purple-700 text-sm">
-                  <svg
-                    className="animate-spin h-4 w-4 mr-2"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  Using special powers...
-                </div>
-              </div>
-            )}
-
-            {mcpTools.length > 0 && (
-              <div className="mt-3 text-xs text-gray-600 text-center">
-                MCP Server: {mcpTools.length} tools loaded
-              </div>
-            )}
-          </div>
-        </div>
+        <MCPToolsSection
+          mcpResult={mcpResult}
+          mcpLoading={mcpLoading}
+          mcpTools={mcpTools}
+          onCallTool={callMCPTool}
+        />
 
         <div className="text-center mt-8 text-purple-600 text-sm">
           <p>Made with 💖 for kids who love to chat!</p>
