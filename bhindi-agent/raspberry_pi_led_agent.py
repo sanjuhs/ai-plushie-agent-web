@@ -226,6 +226,21 @@ def execute_tool(tool_name):
     except Exception as e:
         return create_error_response(f"Error executing tool: {str(e)}", 500)
 
+# Root endpoint for basic info
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint - basic agent info"""
+    return jsonify({
+        "agent": "Raspberry Pi LED Controller",
+        "version": "1.0.0",
+        "description": "Controls an LED connected to GPIO pin 18",
+        "endpoints": {
+            "tools": "/tools",
+            "health": "/health"
+        },
+        "gpio_pin": LED_PIN
+    })
+
 # Optional health check endpoint
 @app.route('/health', methods=['GET'])
 def health_check():
