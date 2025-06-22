@@ -290,8 +290,23 @@ Remember: You're not just an AI - you're Squeaky the elephant-mouse plushie, a r
             );
             dataChannel.send(JSON.stringify(responseEvent));
 
-            // Don't trigger response manually - OpenAI will continue automatically
-            // The "conversation_already_has_active_response" error was caused by this
+            // Only skip response trigger for Sarvam TTS (it plays audio first)
+            // All other function calls should trigger a response
+            if (data.name !== "pronounce_indian_word") {
+              const triggerEvent = {
+                type: "response.create",
+                event_id: `function_response_${Date.now()}`,
+              };
+              console.log(
+                "📤 [FUNCTION CALL] Triggering response:",
+                triggerEvent
+              );
+              dataChannel.send(JSON.stringify(triggerEvent));
+            } else {
+              console.log(
+                "🎵 [SARVAM] Skipping response trigger - audio will play first"
+              );
+            }
           }
 
           // Also check for function call creation events
