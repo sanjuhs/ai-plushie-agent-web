@@ -215,6 +215,59 @@ export const openaiTools: OpenAITool[] = [
       required: ["category", "new_content"],
     },
   },
+  {
+    type: "function",
+    name: "turn_on_led",
+    description:
+      "Turn on the LED connected to Squeaky's Raspberry Pi. This is one of Squeaky's special IoT abilities!",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    type: "function",
+    name: "turn_off_led",
+    description:
+      "Turn off the LED connected to Squeaky's Raspberry Pi. Use this to turn off the LED light.",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    type: "function",
+    name: "blink_led",
+    description:
+      "Make the LED connected to Squeaky's Raspberry Pi blink for a specified duration and frequency. Perfect for creating light shows!",
+    parameters: {
+      type: "object",
+      properties: {
+        duration: {
+          type: "string",
+          description: "How long to blink in seconds (default: 5, max: 60)",
+        },
+        frequency: {
+          type: "string",
+          description: "Blinks per second in Hz (default: 2, max: 10)",
+        },
+      },
+      required: [],
+    },
+  },
+  {
+    type: "function",
+    name: "get_led_status",
+    description:
+      "Get the current status of the LED connected to Squeaky's Raspberry Pi (on/off/blinking).",
+    parameters: {
+      type: "object",
+      properties: {},
+      required: [],
+    },
+  },
 ];
 
 // Tool execution functions
@@ -255,6 +308,18 @@ export const executeOpenAITool = async (
           args.old_content,
           args.new_content
         );
+
+      case "turn_on_led":
+        return await turnOnLED();
+
+      case "turn_off_led":
+        return await turnOffLED();
+
+      case "blink_led":
+        return await blinkLED(args.duration, args.frequency);
+
+      case "get_led_status":
+        return await getLEDStatus();
 
       default:
         return `Sorry, I don't know how to use the tool "${name}" yet!`;
@@ -541,6 +606,178 @@ function updateUserMemory(
     `🧠 [MEMORY] Updated: [${category}] "${oldContentText}" → "${newContent}"`
   );
   return `🧠 Perfect! I've updated my memory. I used to remember "${oldContentText}" but now I know "${newContent}". Thanks for keeping me up to date! 🐘`;
+}
+
+// LED Control Functions for Raspberry Pi
+const LED_API_BASE_URL = "https://exact-marlin-splendid.ngrok-free.app";
+const LED_API_KEY = "test123";
+
+async function turnOnLED(): Promise<string> {
+  try {
+    console.log("🔴 [LED] Attempting to turn on LED...");
+
+    const response = await fetch(`${LED_API_BASE_URL}/tools/turnOnLED`, {
+      method: "POST",
+      headers: {
+        "x-api-key": LED_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("✅ [LED] LED turned on successfully");
+      return `🔴 Yay! I turned on my LED light! My little red light is now glowing bright! With my tiny mouse paws— I mean, my IoT powers, I can control real hardware! 🐘💡`;
+    } else {
+      throw new Error(data.error?.message || "Unknown error");
+    }
+  } catch (error) {
+    console.error("❌ [LED] Error turning on LED:", error);
+    return `🐘 Oh my whiskers! I had trouble turning on my LED light. Maybe my Raspberry Pi is taking a little nap? Let me try again later! 💡`;
+  }
+}
+
+async function turnOffLED(): Promise<string> {
+  try {
+    console.log("⚫ [LED] Attempting to turn off LED...");
+
+    const response = await fetch(`${LED_API_BASE_URL}/tools/turnOffLED`, {
+      method: "POST",
+      headers: {
+        "x-api-key": LED_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("✅ [LED] LED turned off successfully");
+      return `⚫ There we go! I turned off my LED light. My little light is now resting peacefully. Even tiny mouse lights need their beauty sleep! 🐘💤`;
+    } else {
+      throw new Error(data.error?.message || "Unknown error");
+    }
+  } catch (error) {
+    console.error("❌ [LED] Error turning off LED:", error);
+    return `🐘 Oh my trunk— I mean whiskers! I had trouble turning off my LED light. Maybe it's being a bit stubborn today? Let me try again later! 💡`;
+  }
+}
+
+async function blinkLED(
+  duration?: string,
+  frequency?: string
+): Promise<string> {
+  try {
+    const blinkDuration = duration ? parseFloat(duration) : 5;
+    const blinkFrequency = frequency ? parseFloat(frequency) : 2;
+
+    // Validate parameters
+    if (blinkDuration <= 0 || blinkDuration > 60) {
+      return `🤔 Oh my whiskers! The duration should be between 1 and 60 seconds. You asked for ${blinkDuration} seconds, which is a bit much for my tiny mouse brain!`;
+    }
+
+    if (blinkFrequency <= 0 || blinkFrequency > 10) {
+      return `🤔 Eep! The frequency should be between 1 and 10 blinks per second. ${blinkFrequency} Hz would make me dizzy! 🐘`;
+    }
+
+    console.log(
+      `✨ [LED] Attempting to blink LED for ${blinkDuration}s at ${blinkFrequency}Hz...`
+    );
+
+    const response = await fetch(`${LED_API_BASE_URL}/tools/blinkLED`, {
+      method: "POST",
+      headers: {
+        "x-api-key": LED_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        duration: blinkDuration,
+        frequency: blinkFrequency,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      console.log("✅ [LED] LED blinking started successfully");
+      return `✨ Wheeee! My LED is now blinking like a tiny disco light! It's flashing ${blinkFrequency} times per second for ${blinkDuration} seconds! This is so exciting - I feel like a real IoT mouse! 🐘🕺💡`;
+    } else {
+      throw new Error(data.error?.message || "Unknown error");
+    }
+  } catch (error) {
+    console.error("❌ [LED] Error blinking LED:", error);
+    return `🐘 Oh my tiny mouse nose! I had trouble making my LED blink. Maybe it's not in a dancing mood today? Let me try again later! ✨`;
+  }
+}
+
+async function getLEDStatus(): Promise<string> {
+  try {
+    console.log("📊 [LED] Checking LED status...");
+
+    const response = await fetch(`${LED_API_BASE_URL}/tools/getLEDStatus`, {
+      method: "POST",
+      headers: {
+        "x-api-key": LED_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (data.success) {
+      const status = data.data.led_status;
+      const gpio_pin = data.data.gpio_pin;
+
+      console.log(`✅ [LED] LED status retrieved: ${status}`);
+
+      let statusMessage = "";
+      switch (status) {
+        case "on":
+          statusMessage =
+            "🔴 My LED light is currently ON and glowing bright! It's like a tiny red nose on my elephant face— I mean, my mouse face! 🐘";
+          break;
+        case "off":
+          statusMessage =
+            "⚫ My LED light is currently OFF and taking a peaceful nap. Even tiny mouse lights need their rest! 🐘💤";
+          break;
+        case "blinking":
+          statusMessage =
+            "✨ My LED light is currently BLINKING like a tiny disco ball! It's having so much fun dancing on GPIO pin " +
+            gpio_pin +
+            "! 🐘🕺";
+          break;
+        default:
+          statusMessage = `🤔 My LED is in an unknown state: ${status}. That's... unusual for a mouse light!`;
+      }
+
+      return statusMessage;
+    } else {
+      throw new Error(data.error?.message || "Unknown error");
+    }
+  } catch (error) {
+    console.error("❌ [LED] Error getting LED status:", error);
+    return `🐘 Oh my whiskers! I had trouble checking on my LED light. Maybe it's playing hide and seek? Let me try again later! 🔍💡`;
+  }
 }
 
 // Helper function to format tool calls for OpenAI session update

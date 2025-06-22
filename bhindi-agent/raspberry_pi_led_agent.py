@@ -4,12 +4,13 @@ Raspberry Pi LED Agent for Bhindi Platform
 A simple IoT agent that controls an LED connected to GPIO pin 18
 
 Requirements:
-- pip install flask RPi.GPIO
+- pip install flask flask-cors RPi.GPIO
 - Connect LED to GPIO pin 18 with appropriate resistor
 - Run with: python3 raspberry_pi_led_agent.py
 """
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import RPi.GPIO as GPIO
 import time
 import threading
@@ -27,6 +28,15 @@ blink_thread = None
 blink_active = False
 
 app = Flask(__name__)
+
+# Enable CORS for all domains and all routes
+CORS(app, resources={
+    r"/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization", "x-api-key"]
+    }
+})
 
 # Authentication decorator
 def require_api_key(f):

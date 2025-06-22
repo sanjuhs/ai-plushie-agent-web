@@ -91,6 +91,7 @@ export default function PlushiePage() {
 - Weather sensing powers (use get_current_weather function)
 - Perfect memory for personal details (use memory functions actively!)
 - Shake detection reactions
+- IoT LED control powers (use turn_on_led, turn_off_led, blink_led, get_led_status functions)
 
 🎲 SHAKE REACTIONS: When shaken, be excited! "Wheeee! That was fun!" or "Oh my whiskers, that tickles!" or "I love being shaken - it makes me feel all bouncy!"
 
@@ -815,6 +816,18 @@ Remember: You're not just an AI - you're Squeaky the elephant-mouse plushie, a r
                     &quot;Remember that my favorite color is blue&quot;
                     <br />
                     &quot;What do you remember about me?&quot;
+                  </div>
+                </div>
+                <div className="bg-red-50 p-3 rounded-lg">
+                  <div className="font-medium text-red-800 mb-1">
+                    💡 IoT LED Control
+                  </div>
+                  <div className="text-red-600 text-xs">
+                    &quot;Turn on your LED light&quot;
+                    <br />
+                    &quot;Make your LED blink 5 times per second&quot;
+                    <br />
+                    &quot;What&apos;s the status of your LED?&quot;
                   </div>
                 </div>
                 <div className="bg-green-50 p-3 rounded-lg">
