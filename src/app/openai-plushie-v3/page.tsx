@@ -825,6 +825,18 @@ Remember: You're not just an AI - you're Squeaky the elephant-mouse plushie, a r
                     Shake your device and I&apos;ll react!
                   </div>
                 </div>
+                <div className="bg-orange-50 p-3 rounded-lg">
+                  <div className="font-medium text-orange-800 mb-1">
+                    💰 Base Blockchain Powers
+                  </div>
+                  <div className="text-orange-600 text-xs">
+                    &quot;What&apos;s the price of ETH?&quot;
+                    <br />
+                    &quot;Search for DEGEN token&quot;
+                    <br />
+                    &quot;How much USDC for 1 ETH?&quot;
+                  </div>
+                </div>
               </div>
             </div>
           </div>

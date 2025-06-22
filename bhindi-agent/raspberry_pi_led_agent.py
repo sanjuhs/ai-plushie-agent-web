@@ -267,8 +267,10 @@ if __name__ == '__main__':
         print("🔗 Use ngrok to expose this server publicly")
         print("📋 Available at: http://localhost:5000")
         print("🛠️  Test with: curl -H 'x-api-key: test123' http://localhost:5000/tools")
+        print("⚠️  Start ngrok with: ngrok http 5000 --host-header=rewrite")
+        print("📝 Or for static domain: ngrok http 5000 --host-header=your-domain.ngrok.io")
         
-        app.run(host='0.0.0.0', port=5000, debug=True)
+        app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
     except KeyboardInterrupt:
         print("\n🛑 Shutting down...")
     finally:

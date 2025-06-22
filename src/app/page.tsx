@@ -33,6 +33,14 @@ export default function Home() {
       status: "Ready",
       color: "from-pink-400 to-purple-400",
     },
+    {
+      title: "🐭 Squeaky the Plushie v3",
+      description:
+        "Interactive AI companion plushie that talks to children with MCP tools",
+      href: "/openai-plushie-v3",
+      status: "Ready",
+      color: "from-pink-400 to-purple-400",
+    },
   ];
 
   return (
