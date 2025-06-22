@@ -81,3 +81,5 @@ Raspberry Pi GPIO Pin 18 ──── 220Ω Resistor ──── LED Anode (+)
                                                       │
 Raspberry Pi GND Pin ──────────────────────────── LED Cathode (-)
 ```
+
+everything is good to go
