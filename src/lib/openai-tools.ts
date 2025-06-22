@@ -268,6 +268,45 @@ export const openaiTools: OpenAITool[] = [
       required: [],
     },
   },
+  {
+    type: "function",
+    name: "pronounce_indian_word",
+    description:
+      "Generate authentic Indian pronunciation for Hindi, Kannada, or other Indian language words using Sarvam AI. Perfect for explaining Indian words with proper pronunciation and cultural context!",
+    parameters: {
+      type: "object",
+      properties: {
+        word: {
+          type: "string",
+          description:
+            "The Indian word to pronounce (in Hindi, Kannada, or other Indian languages)",
+        },
+        language_code: {
+          type: "string",
+          description:
+            "Language code for pronunciation (hi-IN for Hindi, kn-IN for Kannada, bn-IN for Bengali, etc.)",
+          enum: [
+            "hi-IN",
+            "kn-IN",
+            "bn-IN",
+            "ta-IN",
+            "te-IN",
+            "ml-IN",
+            "gu-IN",
+            "pa-IN",
+            "or-IN",
+            "as-IN",
+          ],
+        },
+        explanation: {
+          type: "string",
+          description:
+            "Optional: Brief explanation or meaning of the word in English",
+        },
+      },
+      required: ["word", "language_code"],
+    },
+  },
 ];
 
 // Tool execution functions
@@ -320,6 +359,13 @@ export const executeOpenAITool = async (
 
       case "get_led_status":
         return await getLEDStatus();
+
+      case "pronounce_indian_word":
+        return await pronounceIndianWord(
+          args.word,
+          args.language_code,
+          args.explanation
+        );
 
       default:
         return `Sorry, I don't know how to use the tool "${name}" yet!`;
@@ -777,6 +823,67 @@ async function getLEDStatus(): Promise<string> {
   } catch (error) {
     console.error("❌ [LED] Error getting LED status:", error);
     return `🐘 Oh my whiskers! I had trouble checking on my LED light. Maybe it's playing hide and seek? Let me try again later! 🔍💡`;
+  }
+}
+
+// Sarvam TTS Function for Indian Language Pronunciation
+async function pronounceIndianWord(
+  word: string,
+  languageCode: string,
+  explanation?: string
+): Promise<string> {
+  try {
+    console.log(`🎵 [SARVAM] Pronouncing "${word}" in ${languageCode}`);
+
+    const response = await fetch("/api/sarvam-tts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text: word,
+        target_language_code: languageCode,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    // The API returns audio data, so we'll indicate success
+    console.log(
+      `✅ [SARVAM] Successfully generated pronunciation for "${word}"`
+    );
+
+    // Language name mapping for user-friendly responses
+    const languageNames: Record<string, string> = {
+      "hi-IN": "Hindi",
+      "kn-IN": "Kannada",
+      "bn-IN": "Bengali",
+      "ta-IN": "Tamil",
+      "te-IN": "Telugu",
+      "ml-IN": "Malayalam",
+      "gu-IN": "Gujarati",
+      "pa-IN": "Punjabi",
+      "or-IN": "Odia",
+      "as-IN": "Assamese",
+    };
+
+    const languageName = languageNames[languageCode] || languageCode;
+
+    let response_text = `🎵 Oh my whiskers! I just generated the authentic ${languageName} pronunciation for "${word}"! `;
+
+    if (explanation) {
+      response_text += `The word means: ${explanation}. `;
+    }
+
+    response_text += `With my special Sarvam AI powers, I can bring the beautiful sounds of Indian languages to life! The pronunciation should be playing now with proper ${languageName} intonation and cultural authenticity. 🐘🇮🇳`;
+
+    return response_text;
+  } catch (error) {
+    console.error("❌ [SARVAM] Error generating pronunciation:", error);
+    return `🐘 Oh my trunk— I mean whiskers! I had trouble generating the pronunciation for "${word}". Maybe the Sarvam API is taking a little break? Let me try again later! 🎵`;
   }
 }
 

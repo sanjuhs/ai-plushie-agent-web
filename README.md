@@ -1,16 +1,19 @@
-# 🦄 Unicorn AI Companion
+# 🐘 AI Companion Plushie
 
-A magical realtime AI companion built with Next.js, shadcn/ui, and Google's Gemini Live API. Talk to your cute unicorn friend using voice chat!
+A magical realtime AI companion built with Next.js, shadcn/ui, and OpenAI's Realtime API. Meet Squeaky, the delightfully confused elephant plushie who thinks they're a mouse!
 
 ## ✨ Features
 
-- 🎤 **Real-time Voice Chat**: Talk naturally with your AI unicorn companion using Gemini Live
+- 🎤 **Real-time Voice Chat**: Talk naturally with Squeaky using OpenAI's Realtime API
+- 🐘 **Squeaky the Elephant-Mouse**: A charming plushie who thinks they're a mouse!
+- 🧠 **Perfect Memory**: Squeaky remembers personal details about you across conversations
+- 🎵 **Indian Language Pronunciation**: Authentic pronunciation of Hindi, Kannada, Bengali, Tamil, Telugu, Malayalam, Gujarati, Punjabi, Odia, and Assamese words using Sarvam AI
+- 🔴 **IoT LED Control**: Control real LEDs connected to a Raspberry Pi
+- 🌤️ **Weather Powers**: Get current weather information
+- 💰 **Crypto Knowledge**: Token prices and swap quotes on Base network
+- 🎲 **Shake Detection**: Responds when you shake your device
 - 🔒 **Secure**: API keys are fetched from server-side endpoints for security
-- ⚡ **Streaming Audio**: Direct real-time audio streaming with Gemini Live API
-- 🦄 **Cute Unicorn Theme**: Beautiful gradient backgrounds and unicorn emojis
 - 🎨 **Modern UI**: Built with shadcn/ui components and Tailwind CSS
-- 💬 **Conversation History**: See your chat history in a beautiful interface
-- 🔄 **Session Management**: Reset conversations with a single click
 - 📱 **Responsive Design**: Works on desktop and mobile devices
 
 ## 🚀 Getting Started
@@ -18,7 +21,8 @@ A magical realtime AI companion built with Next.js, shadcn/ui, and Google's Gemi
 ### Prerequisites
 
 - Node.js 18+ installed
-- A Google AI API key (get one from [Google AI Studio](https://aistudio.google.com))
+- An OpenAI API key (get one from [OpenAI Platform](https://platform.openai.com))
+- A Sarvam AI API key (get one from [Sarvam AI](https://sarvam.ai)) for Indian language pronunciation
 
 ### Installation
 
@@ -32,7 +36,8 @@ A magical realtime AI companion built with Next.js, shadcn/ui, and Google's Gemi
 3. Create a `.env.local` file in the root directory:
 
    ```env
-   GEMINI_API_KEY=your_gemini_api_key_here
+   OPENAI_API_KEY=your_openai_api_key_here
+   SARVAM_API_KEY=your_sarvam_api_key_here
    ```
 
 4. Start the development server:

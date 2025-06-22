@@ -38,7 +38,9 @@ const getSystemPrompt = (config: BotConfig): string => {
 👶 WITH CHILDREN: Be playful, use simple words, help them feel brave and confident.
 👨‍💼 WITH ADULTS: Be a helpful agentic assistant while maintaining your charming personality.
 
-🧠 ALWAYS use your memory functions to remember and recall personal details about users. You're not just an AI - you're Squeaky the elephant-mouse plushie, a real friend! 🐘💖`;
+🧠 ALWAYS use your memory functions to remember and recall personal details about users. You're not just an AI - you're Squeaky the elephant-mouse plushie, a real friend! 
+
+🎵 INDIAN LANGUAGE EXPERT: When users ask about Indian words (Hindi, Kannada, Bengali, Tamil, etc.), use the pronounce_indian_word function to provide authentic pronunciation with cultural context! 🐘💖🇮🇳`;
 };
 
 export default function PlushiePage() {
@@ -92,6 +94,7 @@ export default function PlushiePage() {
 - Perfect memory for personal details (use memory functions actively!)
 - Shake detection reactions
 - IoT LED control powers (use turn_on_led, turn_off_led, blink_led, get_led_status functions)
+- Indian language pronunciation (use pronounce_indian_word function for Hindi, Kannada, Bengali, Tamil, Telugu, Malayalam, Gujarati, Punjabi, Odia, Assamese words)
 
 🎲 SHAKE REACTIONS: When shaken, be excited! "Wheeee! That was fun!" or "Oh my whiskers, that tickles!" or "I love being shaken - it makes me feel all bouncy!"
 
@@ -263,6 +266,22 @@ Remember: You're not just an AI - you're Squeaky the elephant-mouse plushie, a r
             const result = await executeOpenAITool(toolCall);
             console.log("✅ [FUNCTION CALL] Tool result:", result);
 
+            // Special handling for Sarvam TTS pronunciation
+            if (data.name === "pronounce_indian_word") {
+              try {
+                const args = JSON.parse(data.arguments);
+                if (args.word && args.language_code) {
+                  // Play the pronunciation audio
+                  await playSarvamAudio(args.word, args.language_code);
+                }
+              } catch (error) {
+                console.error(
+                  "❌ [SARVAM] Error parsing function arguments:",
+                  error
+                );
+              }
+            }
+
             // Send the result back to OpenAI
             const responseEvent = createToolCallResponse(data.call_id, result);
             console.log(
@@ -271,16 +290,8 @@ Remember: You're not just an AI - you're Squeaky the elephant-mouse plushie, a r
             );
             dataChannel.send(JSON.stringify(responseEvent));
 
-            // Trigger a response after the function call
-            const triggerEvent = {
-              type: "response.create",
-              event_id: `function_response_${Date.now()}`,
-            };
-            console.log(
-              "📤 [FUNCTION CALL] Triggering response:",
-              triggerEvent
-            );
-            dataChannel.send(JSON.stringify(triggerEvent));
+            // Don't trigger response manually - OpenAI will continue automatically
+            // The "conversation_already_has_active_response" error was caused by this
           }
 
           // Also check for function call creation events
@@ -564,6 +575,78 @@ Remember: You're not just an AI - you're Squeaky the elephant-mouse plushie, a r
       console.log("📤 Response trigger sent to Squeaky");
     } else {
       console.log("❌ Cannot trigger response - Squeaky is not connected");
+    }
+  };
+
+  // Function to play Sarvam TTS audio
+  const playSarvamAudio = async (word: string, languageCode: string) => {
+    try {
+      console.log(
+        `🎵 [SARVAM] Playing pronunciation for "${word}" in ${languageCode}`
+      );
+
+      const response = await fetch("/api/sarvam-tts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: word,
+          target_language_code: languageCode,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Get the audio blob and play it
+      const audioBlob = await response.blob();
+      console.log(
+        `🎵 [SARVAM] Audio blob type: ${audioBlob.type}, size: ${audioBlob.size} bytes`
+      );
+
+      const audioUrl = URL.createObjectURL(audioBlob);
+
+      // Create a new audio element to play the pronunciation
+      const pronunciationAudio = new Audio();
+      pronunciationAudio.volume = 0.8; // Slightly lower volume than main speech
+      pronunciationAudio.preload = "auto";
+
+      pronunciationAudio.oncanplay = () => {
+        console.log(`🎵 [SARVAM] Audio can play, starting playback`);
+        pronunciationAudio.play().catch((error) => {
+          console.error("❌ [SARVAM] Play error:", error);
+        });
+      };
+
+      pronunciationAudio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        console.log(`✅ [SARVAM] Finished playing pronunciation for "${word}"`);
+      };
+
+      pronunciationAudio.onerror = (error) => {
+        console.error("❌ [SARVAM] Error playing audio:", error);
+        console.error(
+          "❌ [SARVAM] Audio element error details:",
+          pronunciationAudio.error
+        );
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      pronunciationAudio.onloadstart = () => {
+        console.log(`🎵 [SARVAM] Started loading audio`);
+      };
+
+      pronunciationAudio.onloadeddata = () => {
+        console.log(`🎵 [SARVAM] Audio data loaded successfully`);
+      };
+
+      // Set the source and start loading
+      pronunciationAudio.src = audioUrl;
+      console.log(`🎵 [SARVAM] Set audio source, waiting for load...`);
+    } catch (error) {
+      console.error("❌ [SARVAM] Error playing pronunciation:", error);
     }
   };
 
